@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: decanaria
+      POSTGRES_PASSWORD: decanaria
+      POSTGRES_DB: decanaria_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: "pg_isready -U myuser -d mydatabase"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  scrapy:
+    build:
+      context: .
+      dockerfile: dockerfile
+    volumes:
+      - .:/app
+    command: ./run.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
